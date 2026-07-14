@@ -1009,8 +1009,8 @@ async function handleCommand(input) {
 }
 
 async function main() {
-    startBot("giphz", {
-        "pass": "Kpc5519A",
+    startBot("ThinhNL", {
+        "pass": "kingmc123@",
         "proxy": {
             "enable": false,
             "ip": "127.0.0.1",
