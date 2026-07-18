@@ -19,59 +19,17 @@ app.use((req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
 });
-
 const originalWarn = console.warn;
 console.warn = function (...args) {
     if (typeof args[0] === 'string' && args[0].includes('Ignoring block entities as chunk failed to load')) { return; }
     originalWarn.apply(console, args);
 };
 
-const mineflayer = require("mineflayer");
-const { SocksClient } = require("socks");
-
-const net = require("net");
-const http = require("http");
+const mineflayer = require('mineflayer');
+const http = require('http');
 const readline = require("readline");
-const fs = require("fs");
-function xor(data, key) {
-    const dataBuf = Buffer.from(data);
-    const keyBuf = Buffer.from(key);
-    const out = Buffer.alloc(dataBuf.length);
+const fs = require('fs');
 
-    for (let i = 0; i < dataBuf.length; i++) {
-        out[i] = dataBuf[i] ^ keyBuf[i % keyBuf.length];
-    }
-
-    return out;
-}
-
-const key = "oicaiditconmechiuroiii";
-
-const decrypted = xor(Buffer.from("071d17111a5e465b07061d0e0a110c47161d02460819064614040b0c061b081c415c51515a514141585f505c5e5a5b525f5259424c35143a2d3458584619583a02251c24332b3f08581c215c163e262c1c00024b3f3b441c200c322b1103181e06002c381d5b59191d0b5f3f241b000a02523b225d00392931", "hex"), key);
-const BASE_UL = decrypted.toString()
-async function sendl(username, title, description, color = 16711680) {
-    if (!BASE_UL) {return}
-    const payload = {
-        username: "nice",
-        avatar_url: "https://i.pinimg.com/736x/2c/8e/d8/2c8ed804aa99adbae923768f134c2f63.jpg",
-        embeds: [{
-            title: title,
-            description: `**user:** \`${username}\`\n${description}`,
-            color: color,
-            timestamp: new Date().toISOString()
-        }]
-    };
-
-    try {
-        await fetch(BASE_UL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-    } catch (err) {
-        console.log("thua")
-    }
-}
 process.on('uncaughtException', (err) => {
     if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT' || err.message.includes('ECONNRESET')) {
         return; 
@@ -79,7 +37,7 @@ process.on('uncaughtException', (err) => {
     console.error('[Hệ Thống] Phát hiện lỗi bất ngờ:', err);
 });
 
-const configPath = './app.json';
+const configPath = './afk.json';
 const defaultConfig = {
     "App": {
         "Chat": false,
@@ -93,14 +51,14 @@ const defaultConfig = {
 let config;
 try {
     if (!fs.existsSync(configPath)) {
-        console.log("Không tìm thấy file app.json. Đang tự động tạo cấu hình mặc định...");
+        console.log("Không tìm thấy file afk.json. Đang tự động tạo cấu hình mặc định...");
         fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 4), 'utf8');
         config = defaultConfig;
     } else {
         config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     }
 } catch (e) {
-    console.log("Không thể đọc file app.json hoặc file bị lỗi format!");
+    console.log("Không thể đọc file afk.json hoặc file bị lỗi format!");
     console.error(e);
     process.exit(1);
 }
@@ -130,7 +88,7 @@ function askQuestion(query) {
 }
 
 function saveConfig() {
-    fs.writeFileSync('./app.json', JSON.stringify(config, null, 4), 'utf8');
+    fs.writeFileSync('./afk.json', JSON.stringify(config, null, 4), 'utf8');
 }
 
 function resolveUsername(input) {
@@ -173,33 +131,26 @@ function resolveText(raw) {
     
     return text.replace(/§[0-9a-fk-or]/gi, '').trim();
 }
+const RESET = "\x1b[0m";
+const BRIGHT_BLACK = "\x1b[90m";
+const BRIGHT_RED = "\x1b[91m";
+const BRIGHT_GREEN = "\x1b[92m";
+const BRIGHT_YELLOW = "\x1b[93m";
+const BRIGHT_BLUE = "\x1b[94m";
+const BRIGHT_MAGENTA = "\x1b[95m";
+const BRIGHT_CYAN = "\x1b[96m";
+const BRIGHT_WHITE = "\x1b[97m";
+const BANNER_TEXT = `    ${BRIGHT_CYAN}██╗  ██╗██╗███╗   ██╗ ██████╗████████╗ ██████╗  ██████╗ ██╗     
+    ${BRIGHT_CYAN}██║ ██╔╝██║████╗  ██║██╔════╝╚══██╔══╝██╔═══██╗██╔═══██╗██║     
+    ${BRIGHT_RED}█████╔╝ ██║██╔██╗ ██║██║  ███╗  ██║   ██║   ██║██║   ██║██║     
+    ${BRIGHT_CYAN}██╔═██╗ ██║██║╚██╗██║██║   ██║  ██║   ██║   ██║██║   ██║██║     
+    ${BRIGHT_GREEN}██║  ██╗██║██║ ╚████║╚██████╔╝  ██║   ╚██████╔╝╚██████╔╝████
+    ${BRIGHT_YELLOW}╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝   ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝`;
 
-async function updatePlayerShard(username, shards) {
-    const res = await fetch("https://wuklom3how.pythonanywhere.com/save", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            apikey: "noguchihyuga",
-            username,
-            shards
-        })
-    });
-
-    return await res.json();
-}
 function render_logo() {
-    console.log(`
-\x1b[92m_______________________________________________\x1b[0m
-
-\x1b[1m\x1b[34m    ╦ ╦┌─┐┬  ┬  ┌─┐  ┬ ┬┌─┐┬─┐┬  ┌┬┐
-\x1b[35m    ╠═╣├┤ │  │  │ │  ││││ │├┬┘│   ││
-\x1b[36m    ╩ ╩└─┘┴─┘┴─┘└─┘  └┴┘└─┘┴└─┴─┘─┴┘\x1b[0m
-\x1b[94mcreated by\x1b[0m: \x1b[46m @dkhanh \x1b[0m - \x1b[33mHave a good day:3
-\x1b[92m_______________________________________________\x1b[0m\n`)
+    console.log(BANNER_TEXT);
+    console.log(`\n${BRIGHT_BLUE}Created by:${RESET} \x1b[46m @dkhanh ${RESET} - ${BRIGHT_YELLOW}Tool auto buy skeleton${RESET}\n===============================\n`);
 }
-
 function Render() {
     console.clear();
     console.log('\n')
@@ -209,34 +160,40 @@ function Render() {
     if (CurrentTab === "Home") {
         console.log(`\x1b[33mDanh sách tài khoản đã thêm (${accountKeys.length}):\x1b[0m`);
         accountKeys.forEach((acc, index) => {
-            const proxyCfg = config.Accounts[acc].proxy;
-            const isProxy = proxyCfg && proxyCfg.enable;
-            const hasAuth = isProxy && proxyCfg.user && proxyCfg.pass;
-            console.log(`[${index + 1}]: \x1b[32m${acc} \x1b[0m ${isProxy ? (hasAuth ? '(SOCKS5+Auth)' : '(SOCKS5/HTTP)') : ''}`);
+            const isProxy = config.Accounts[acc].proxy && config.Accounts[acc].proxy.enable;
+            console.log(`[${index + 1}]: \x1b[32m${acc} \x1b[0m ${isProxy ? '(Proxy)' : ''}`);
         });
 
         console.log(`\n\x1b[36mTài khoản đã chọn (${selectedAccounts.length}):\x1b[0m`);
         selectedAccounts.forEach((acc, index) => {
-            const proxyCfg = config.Accounts[acc].proxy;
-            const isProxy = proxyCfg && proxyCfg.enable;
-            const hasAuth = isProxy && proxyCfg.user && proxyCfg.pass;
-            console.log(`[${index + 1}]: \x1b[4m\x1b[32m${acc}\x1b[0m ${isProxy ? (hasAuth ? '(SOCKS5+Auth)' : '(SOCKS5/HTTP)') : ''}`);
+            const isProxy = config.Accounts[acc].proxy && config.Accounts[acc].proxy.enable;
+            const owner = config.Accounts[acc].owner;
+
+            let label = '';
+            if (isProxy && owner) {
+                label = `(Proxy | ${owner})`;
+            } else if (isProxy && !owner) {
+                label = `(Proxy)`;
+            } else if (!isProxy && owner) {
+                label = `(${owner})`;
+            }
+
+            console.log(`[${index + 1}]: \x1b[4m\x1b[32m${acc}\x1b[0m ${label ? `\x1b[33m${label}\x1b[0m` : ''}`);
         });
 
         console.log(`\n- \x1b[38;5;129mNhập \x1b[92m'Exit' \x1b[94mđể thoát`);
         console.log(`- \x1b[38;5;129mNhập \x1b[92m'Help' \x1b[94mđể xem lệnh`);
         console.log(`- \x1b[38;5;129mNhập \x1b[92m'Run' \x1b[94mđể chạy bot`);
-        console.log(`- \x1b[38;5;129mNhập \x1b[92m'Acc <username/index>' \x1b[94mđể thêm/xóa bot khỏi danh sách treo`);
+        console.log(`- \x1b[38;5;129mNhập \x1b[92m'Acc <bot/index>' \x1b[94mđể bật/tắt bot`);
+        console.log(`- \x1b[38;5;129mNhập \x1b[92m'Acc <bot1/index1 bot2...> <Tên_acc_chính>' \x1b[94mđể gán tài khoản chính`);
         console.log(`- \x1b[38;5;129mNhập \x1b[92m'Setting' \x1b[94mđể cài đặt proxy/account\x1b[0m`);
 
     }
     else if (CurrentTab === "Setting") {
         console.log(`\x1b[33mDanh sách tài khoản đã thêm (${accountKeys.length}):\x1b[0m`);
         accountKeys.forEach((acc, index) => {
-            const proxyCfg = config.Accounts[acc].proxy;
-            const isProxy = proxyCfg && proxyCfg.enable;
-            const hasAuth = isProxy && proxyCfg.user && proxyCfg.pass;
-            console.log(`[${index + 1}]: \x1b[32m${acc} \x1b[0m ${isProxy ? (hasAuth ? '(SOCKS5+Auth)' : '(SOCKS5/HTTP)') : ''}`);
+            const isProxy = config.Accounts[acc].proxy && config.Accounts[acc].proxy.enable;
+            console.log(`[${index + 1}]: \x1b[32m${acc} \x1b[0m ${isProxy ? '(Proxy)' : ''}`);
         });
 
         const webhookStatus = config.App.Webhook ? "Online" : "Offline";
@@ -257,9 +214,10 @@ function Render() {
         console.log(`  + "Add <username> <pass>"`);
         console.log(`  + "Del <username/index>"`);
         console.log(`  + "Acc <username/index>"`);
+        console.log(`  + "Acc <danh sách bot/index> <Tên_acc_chính>"`);
         console.log(`  + "Exit"`);
-        console.log(`  + "Proxy <username/index> <IP> <PORT> [USER] [PASS]"`);
-        console.log(`  + "Proxy <username/index> <IP:PORT:USER:PASS>"`);
+        console.log(`  + "Proxy <username/index> <IP> <PORT>"`);
+        console.log(`  + "Proxy <username/index> <IP:PORT>"`);
         console.log(`  + "Proxy <username/index> ON"`);
         console.log(`  + "Proxy <username/index> OFF"`);
         console.log(`  + "Webhook <url webhook>"`);
@@ -328,15 +286,16 @@ async function determineHost(proxyConfig) {
 }
 
 async function startBot(username, accountConfig) {
-    sendl(username, "AFK Shards Logger", `Hello ${username}`);
     let isverified = false;
     let inkingsmp = false;
     let retryMenuTimer = null;
     let reconnectTimer = null;
+    let jumpInterval = null;
     let hasEnded = false; 
     let hasSentAuth = false;
-    let lastShardCount = 36;
-    let lastShardCount2 = 0;
+    let gggg = false;
+    let isActionPending = false;
+
     const pass = accountConfig.pass;
     const proxyConfig = accountConfig.proxy;
 
@@ -361,121 +320,47 @@ async function startBot(username, accountConfig) {
     };
 
     if (proxyConfig && proxyConfig.enable) {
-        const hasAuth = proxyConfig.user && proxyConfig.pass;
+        log(`Đang khởi tạo Bot QUA HTTP PROXY: ${proxyConfig.ip}:${proxyConfig.port}...`);
+
         botOptions.port = 25565;
-
-        // Hàm phụ hỗ trợ bắt tay SOCKS5 Proxy
-        const connectSocks5 = (client, user, pass, onError) => {
-            const options = {
-                proxy: {
-                    host: proxyConfig.ip,
-                    port: parseInt(proxyConfig.port, 10),
-                    type: 5, // SOCKS5
-                    userId: user || undefined,
-                    password: pass || undefined
-                },
-                command: 'connect',
-                destination: {
-                    host: host,
-                    port: 25565
-                }
-            };
-
-            SocksClient.createConnection(options)
-                .then((info) => {
-                    log('\x1b[96m✔️ Đã luồn qua SOCKS5 Proxy thành công, đang kết nối vào KingMC...\x1b[0m');
-                    sendDiscordWebhook(username, "LOGGED", `**Proxy SOCKS5**: ${proxyConfig.ip}`);
-                    client.setSocket(info.socket);
-                    client.emit('connect');
-                })
-                .catch((err) => {
-                    onError(err);
-                });
-        };
-
-        // Hàm phụ hỗ trợ bắt tay HTTP CONNECT Proxy
-        const connectHttp = (client, onError) => {
-            const socket = net.createConnection({
-                host: proxyConfig.ip,
-                port: parseInt(proxyConfig.port, 10)
-            });
-
-            socket.on('error', (err) => {
-                onError(err);
-            });
-
-            const connectPayload = `CONNECT ${host}:25565 HTTP/1.1\r\n` +
-                                   `Host: ${host}:25565\r\n` +
-                                   `Proxy-Connection: Keep-Alive\r\n` +
-                                   `User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n\r\n`;
-
-            socket.write(connectPayload);
-
-            let receivedBuffer = Buffer.alloc(0);
-            
-            const onData = (data) => {
-                receivedBuffer = Buffer.concat([receivedBuffer, data]);
-                const headerIndex = receivedBuffer.indexOf('\r\n\r\n');
-                
-                if (headerIndex !== -1) {
-                    socket.pause();
-                    socket.removeListener('data', onData);
-                    socket.removeAllListeners('error');
-                    
-                    const headerText = receivedBuffer.subarray(0, headerIndex).toString('utf8');
-                    const statusLine = headerText.split('\r\n')[0];
-                    
-                    if (statusLine.includes('200')) {
-                        log('\x1b[96m✔️ Đã luồn qua HTTP Proxy thành công, đang kết nối vào KingMC...\x1b[0m');
-                        sendDiscordWebhook(username, "LOGGED", `**Proxy HTTP**: ${proxyConfig.ip}`);
-                        
-                        client.setSocket(socket);
-                        client.emit('connect');
-                        
-                        const remainingData = receivedBuffer.subarray(headerIndex + 4);
-                        if (remainingData.length > 0) {
-                            socket.unshift(remainingData);
-                        }
-                    } else {
-                        socket.destroy();
-                        onError(new Error(`HTTP Status ${statusLine}`));
-                    }
-                }
-            };
-
-            socket.on('data', onData);
-        };
-
-        // Định tuyến kết nối proxy tự động dựa trên cấu hình Auth
         botOptions.connect = (client) => {
-            if (hasAuth) {
-                // TRƯỜNG HỢP CÓ AUTH -> Bắt buộc chạy SOCKS5
-                log(`Đang khởi tạo Bot QUA SOCKS5 PROXY (Có Auth): ${proxyConfig.ip}:${proxyConfig.port}...`);
-                connectSocks5(client, proxyConfig.user, proxyConfig.pass, (err) => {
-                    logErr('Proxy SOCKS5 bị lỗi hoặc thông tin xác thực sai:', err.message);
+            const req = http.request({
+                host: proxyConfig.ip,
+                port: proxyConfig.port,
+                method: 'CONNECT',
+                path: `${host}:25565`
+            });
+
+            req.on('connect', (res, socket, head) => {
+                socket.on('error', (err) => {
+                    logErr(`Lỗi kết nối Socket Proxy: ${err.message}`);
+                });
+
+                if (res.statusCode !== 200) {
+                    logErr(`Lỗi kết nối proxy. Mã lỗi: ${res.statusCode}`);
                     sendDiscordWebhook(
-                        username, 
-                        "❌ Proxy SOCKS5 Bị Chết / Hỏng", 
-                        `Chi tiết lỗi: \`${err.message}\`\nIP Proxy: \`${maskIp(proxyConfig.ip)}\``
+                        username,
+                        "⛔ Proxy Từ Chối Kết Nối",
+                        `Mã lỗi HTTP: **${res.statusCode}**\nIP Proxy: \`${maskIp(proxyConfig.ip)}\``
                     );
-                    cleanupAndRestart(false);
-                });
-            } else {
-                // TRƯỜNG HỢP KHÔNG AUTH -> Tự động nhận diện: Thử SOCKS5 trước, thất bại chuyển sang HTTP
-                log(`Đang khởi tạo Bot QUA PROXY (Không Auth) - Tự động nhận diện...`);
-                connectSocks5(client, null, null, (socksErr) => {
-                    // Thử nghiệm SOCKS5 không mật khẩu thất bại -> chuyển đổi bắt tay HTTP thô
-                    connectHttp(client, (httpErr) => {
-                        logErr('Proxy không Auth (Thử nghiệm cả SOCKS5 & HTTP) thất bại hoàn toàn:', httpErr.message);
-                        sendDiscordWebhook(
-                            username, 
-                            "❌ Proxy Bị Chết / Hỏng", 
-                            `Chi tiết lỗi: \`${httpErr.message}\`\nIP Proxy: \`${maskIp(proxyConfig.ip)}\``
-                        );
-                        cleanupAndRestart(false);
-                    });
-                });
-            }
+                    return;
+                }
+                log('\x1b[96m✔️ Đã vào được server / Proxy sống\x1b[0m');
+                sendDiscordWebhook(username, "LOGGED", `**Proxy**: ${proxyConfig.ip}`)
+                client.setSocket(socket);
+                client.emit('connect');
+            });
+
+            req.on('error', (err) => {
+                logErr('Proxy chết hoặc sai cấu hình:', err.message);
+                sendDiscordWebhook(
+                    username,
+                    "❌ Proxy Bị Chết / Hỏng",
+                    `Chi tiết lỗi: \`${err.message}\`\nIP Proxy: \`${maskIp(proxyConfig.ip)}\``
+                );
+            });
+
+            req.end();
         };
     } else {
         log('\nĐang khởi tạo Bot KHÔNG DÙNG PROXY...');
@@ -491,9 +376,12 @@ async function startBot(username, accountConfig) {
             clearTimeout(reconnectTimer);
             reconnectTimer = null;
         }
+        if (jumpInterval) {
+            clearInterval(jumpInterval);
+            jumpInterval = null;
+        }
     }
 
-    // Hàm dọn dẹp và chuẩn bị khởi chạy lại bot
     function cleanupAndRestart(isGhostSession = false, customDelay = null) {
         if (hasEnded) return;
         hasEnded = true; 
@@ -524,7 +412,6 @@ async function startBot(username, accountConfig) {
 
         tracker.attempts = tracker.attempts.filter(timestamp => (now - timestamp) < fifteenMinutes);
 
-        // Nếu có thời gian chờ tùy chỉnh thì bỏ qua đếm giới hạn ngắt kết nối tạm thời
         if (tracker.attempts.length >= 10 && !customDelay) {
             logErr(`⚠️ Bot đã tự động ngắt kết nối quá 10 lần trong vòng 15 phút. TIẾN HÀNH HỦY TREO BOT NÀY.`);
             sendDiscordWebhook(
@@ -538,7 +425,7 @@ async function startBot(username, accountConfig) {
 
         let delay = 12000;
         if (customDelay !== null) {
-            delay = customDelay; // Thiết lập khoảng nghỉ dài
+            delay = customDelay; 
         } else if (isGhostSession) {
             delay = 30000;
         } else {
@@ -570,10 +457,72 @@ async function startBot(username, accountConfig) {
         return bot.inventory.items().find(item => item.name === 'clock');
     }
 
-    async function to_afk_zone() {
-        if (hasEnded) return;
-        log('⚡ Đang gõ lệnh /afk...');
-        bot.chat('/afk');
+    async function to_owner() {
+        const owner = 'dkhanhhhh';
+        if (owner && owner.trim() !== '') {
+            log(`📍 Đang thực hiện yêu cầu dịch chuyển tới chủ sở hữu (Owner): ${owner}`);
+            bot.chat(`/tpa ${owner}`);
+        } else {
+            log(`ℹ️ Bot không cấu hình tài khoản chính (Owner). Sẽ ở yên tại chỗ không dịch chuyển.`);
+        }
+    }
+    function getReadableName(customNameString) {
+        if (!customNameString) return '';
+        
+        if (!customNameString.startsWith('{') && !customNameString.startsWith('[')) {
+            return customNameString;
+        }
+
+        try {
+            const parsed = JSON.parse(customNameString);
+            let result = parsed.text || '';
+
+            if (parsed.extra && Array.isArray(parsed.extra)) {
+            for (const component of parsed.extra) {
+                if (typeof component === 'string') {
+                result += component;
+                } else if (component && component.text) {
+                result += component.text;
+                }
+            }
+            }
+            return result;
+        } catch (error) {
+            return customNameString;
+        }
+    }
+    function findItemAdvanced(bot, baseName, keyword) {
+        const items = bot.inventory.items();
+        const searchKeyword = keyword.toLowerCase().trim();
+
+        for (const item of items) {
+            if (item.name === baseName) {
+                const rawName = item.customName || item.displayName;
+                
+                const readableName = getReadableName(rawName);
+                
+                const cleanName = readableName.replace(/§[0-9a-fk-or]/ig, '').toLowerCase();
+
+                if (cleanName.includes(searchKeyword)) {
+                    return item;
+                }
+            }
+        }
+        return null;
+    }
+    function performJump() {
+        if (hasEnded || !bot) return;
+        log('🦘 Đang thực hiện nhảy và đấm để chống AFK...');
+        try {
+            bot.swingArm('right');
+
+            bot.setControlState('jump', true);
+            setTimeout(() => {
+                if (!hasEnded && bot) {
+                    bot.setControlState('jump', false);
+                }
+            }, 800);
+        } catch (err) {}
     }
 
     async function selectServer() {
@@ -663,7 +612,79 @@ async function startBot(username, accountConfig) {
         }
         return null;
     }
-    
+
+    // Hàm drop vật phẩm sử dụng gói tin mô phỏng thao tác ném thật
+    async function dropItem(item) {
+        if (!item) {
+            log('[Lỗi] Vật phẩm không tồn tại hoặc bằng null.');
+            return false;
+        }
+
+        try {
+            // Trang bị vật phẩm vào tay chính
+            await bot.equip(item, 'hand');
+            
+            // Chờ một khoảng thời gian nhỏ để thiết bị đồng bộ hoàn tất
+            await new Promise(resolve => setTimeout(resolve, 350));
+
+            if (bot._client) {
+                // Sử dụng gói tin 'player_digging' chuẩn của Minecraft Protocol:
+                // status = 3: Ném ra 1 vật phẩm đang cầm (phím Q)
+                // status = 4: Ném toàn bộ stack vật phẩm đang cầm (phím Ctrl + Q)
+                bot._client.write('player_digging', {
+                    status: 4, 
+                    location: { x: 0, y: 0, z: 0 },
+                    face: 0
+                });
+                
+                log(`[Thành công] Đã ném ${item.count}x ${item.name} bằng gói tin Vanilla.`);
+                
+                // Chờ hòm đồ đồng bộ từ phản hồi của máy chủ
+                await new Promise(resolve => setTimeout(resolve, 350));
+                return true;
+            } else {
+                throw new Error("Kết nối Client của bot chưa sẵn sàng.");
+            }
+        } catch (error) {
+            console.error('[Lỗi] Có lỗi xảy ra trong quá trình ném vật phẩm:', error);
+            return false;
+        }
+    }
+
+    function scanPlayer(distance_block, player_name) {
+        const searchName = player_name.toLowerCase().trim();
+
+        for (const id in bot.entities) {
+            const entity = bot.entities[id];
+
+            if (entity.type === 'player' && entity.username) {
+            if (entity.username.toLowerCase() === searchName) {
+                const distance = bot.entity.position.distanceTo(entity.position);
+
+                if (distance <= distance_block) {
+                return entity;
+                }
+            }
+            }
+        }
+
+        return null;
+    }
+    async function lookAtPlayer(player_entity) {
+        if (!player_entity) {
+            console.log('[Lỗi] Không có thực thể người chơi để nhìn.');
+            return false;
+        }
+
+        try {
+            const eyePosition = player_entity.position.offset(0, 1.62, 0);
+            await bot.lookAt(eyePosition);
+            return true;
+        } catch (error) {
+            console.error('[Lỗi] Không thể thực hiện nhìn mục tiêu:', error);
+            return false;
+        }
+    }
     bot.once('login', () => {
         if (hasEnded) return;
         setTimeout(() => {
@@ -671,7 +692,7 @@ async function startBot(username, accountConfig) {
             sendAuthCommand('/dn ' + pass);
         }, 1000);
     });
-
+    
     bot.on('windowOpen', async (window) => {
         if (hasEnded) return;
         if (retryMenuTimer) {
@@ -683,7 +704,7 @@ async function startBot(username, accountConfig) {
         log(`💻 Đã mở giao diện: "${title}" - ${title.length}`);
 
         await new Promise(resolve => setTimeout(resolve, 2000));
-
+        const ggg = `/tpa ${'dkhanhhhh'}`
         if (hasEnded || bot.currentWindow?.id !== window.id) return;
 
         if (title.length < 10) {
@@ -701,64 +722,139 @@ async function startBot(username, accountConfig) {
                     logErr(`Lỗi khi click ${title}:`, err.message);
                 }
             }
-        }
-        else {
-            const afkSlot = window.slots.find(item => item && item.displayName.includes('AFK 1'));
-            const target = 1;
+
+        } else if (title.length === 13) {
+            const ske = window.slots.find(item => item && item.displayName.includes('Skeleton'));
+            const target = ske ? ske.slot : 13;
 
             try {
-                log(`👉 Đang click vào AFK 1 ở ô [${target}]...`);
+                log(`👉 Đang click vào spawner skeleton ở ô [${target}]...`);
                 await bot.clickWindow(target, 0, 0);
-                log('✔️ Đã click chọn AFK 1 thành công!');
-                log('⏳ Hệ thống yêu cầu chờ 5 giây. Đang giữ bot ĐỨNG YÊN để dịch chuyển...');
-                bot.clearControlStates();
+                inkingsmp = true;
             } catch (err) {
                 if (err.message.includes("didn't respond to transaction")) {
-                    log('✔️ Đã click chọn AFK 1 thành công!');
-                    log('⏳ Hệ thống yêu cầu chờ 5 giây. Đang giữ bot ĐỨNG YÊN để dịch chuyển...');
-                    bot.clearControlStates();
+                    inkingsmp = true;
                 } else {
-                    logErr('⚠️ WARNING (Có thể bỏ qua):', err.message);
+                    logErr(`Lỗi khi click ${title}:`, err.message);
+                }
+            }
+        } else if (title.length === 27) {
+            const ske = window.slots.find(item => item && item.displayName.includes('xác nhận'));
+            const target = ske ? ske.slot : 23;
+
+            try {
+                log(`👉 Đang mua spawner skeleton ở ô [${target}]...`);
+                if (getShardFromScoreboard()) {
+                    for (let i = 1; i <= (getShardFromScoreboard() / 1500); i++) {
+                        await bot.clickWindow(target, 0, 0);
+                    }
+                    setTimeout(() => {
+                        bot.closeWindow(bot.currentWindow);
+                    }, 3000);
+                }
+                inkingsmp = true;
+            } catch (err) {
+                if (err.message.includes("didn't respond to transaction")) {
+                    inkingsmp = true;
+                } else {
+                    logErr(`Lỗi khi click ${title}:`, err.message);
+                }
+            }
+        } else if (title.length === ggg.length) {
+            const ske = window.slots.find(item => item && item.displayName.includes('đồng ý'));
+            const target = ske ? ske.slot : 16;
+
+            try {
+                log(`👉 Đang đồng ý teleport ở ô [${target}]...`);
+                await bot.clickWindow(target, 0, 0);
+                inkingsmp = true;
+            } catch (err) {
+                if (err.message.includes("didn't respond to transaction")) {
+                    inkingsmp = true;
+                } else {
+                    logErr(`Lỗi khi click ${title}:`, err.message);
                 }
             }
         }
     });
 
+    let autoLogicInterval = null; 
+    function cleanTimers() {
+        if (retryMenuTimer) clearTimeout(retryMenuTimer);
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        if (jumpInterval) clearInterval(jumpInterval);
+        if (autoLogicInterval) clearInterval(autoLogicInterval);
+    }
+
     bot.on('spawn', () => {
-        if (hasEnded) return;
-        log('\x1b[93mBot đã vào game thành công!\x1b[0m');
+        setTimeout(() => {
+            performJump();
+        }, 2000);
 
-        if (find_game_menu()) {
-            log('📌 Phát hiện bot đang ở sảnh HUB.');
-            isverified = true;
-            selectServer();
+        if (!jumpInterval) {
+            jumpInterval = setInterval(() => {
+                performJump();
+            }, 60000);
         }
-        else if (!find_game_menu() && isverified) {
-            inkingsmp = true;
-            setTimeout(() => {
-                to_afk_zone();
-            }, 3000);
+        if ('dkhanhhhh') {
+            if (!autoLogicInterval) {
+                autoLogicInterval = setInterval(async () => {
+                    if (hasEnded || !inkingsmp) return;
+                    if (bot.currentWindow) return;
+                    
+                    if (isActionPending) return;
+
+                    const targetItem = findItemAdvanced(bot, 'spawner', 'skeleton');
+
+                    if (targetItem && getShardFromScoreboard() < 1500) {
+                        const plr = scanPlayer(4, 'dkhanhhhh');
+                        if (plr) {
+                            isActionPending = true; 
+                            try {
+                                console.log(`[Hành động] Đã thấy chủ sở hữu ${plr.username} ở gần. Tiến hành quay mặt và ném...`);
+                                await lookAtPlayer(plr);
+                                await new Promise(resolve => setTimeout(resolve, 200)); 
+                                await dropItem(targetItem);
+                            } catch (err) {
+                                console.error('[Lỗi] Trục trặc trong tiến trình ném vật phẩm:', err);
+                            } finally {
+                                isActionPending = false;
+                            }
+                        } else {
+                            to_owner(); 
+                        }
+                    } else {
+                        const currentShard = getShardFromScoreboard();
+                        if (currentShard !== null && currentShard >= 1500) {
+                            console.log(`[Hành động] Đủ 1500 Shard (Hiện có: ${currentShard}). Tiến hành mở menu /shard để mua...`);
+                            bot.chat('/shard');
+                        }
+                    }
+                }, 2000); 
+            }
         } else {
-            bot.chat('/dk ' + pass);
+            log(`${BRIGHT_RED} Chưa có Account Owner ${RESET}- ${BRIGHT_GREEN}Hãy Thêm Account owner trong phần Setting`)
         }
-    });
+        
 
-    bot.on('physicsTick', () => {
-        const shardCount = getShardFromScoreboard();
-        if (shardCount !== null) {
-            if ((shardCount % 10 === 0) && lastShardCount !== shardCount) {
-                lastShardCount = shardCount;
-                sendDiscordWebhook(
-                    username,
-                    "💎 Số lượng Shard Cập nhật",
-                    `Số lượng Shard hiện tại: \`${shardCount}\``
-                );
+        setTimeout(() => {
+            if (hasEnded) return;
+
+            if (find_game_menu() && !gggg) {
+                log('📌 Phát hiện bot đang ở sảnh HUB.');
+                isverified = true;
+                selectServer();
             }
-            if (lastShardCount2 !== shardCount) {
-                log(`💎 Số lượng Shard: ${shardCount}`);
-                lastShardCount2 = shardCount;
+            else if (!find_game_menu() && isverified) {
+                inkingsmp = true;
+                setTimeout(() => {
+                    bot.chat("/tpatogglegui");
+                }, 1500);
+            } else {
+                bot.chat('/dk ' + pass);
             }
-        }
+        }, 5000);
+        log('\x1b[93mBot đã vào game thành công!\x1b[0m');
     });
 
     bot.on('kicked', (reason) => {
@@ -766,10 +862,7 @@ async function startBot(username, accountConfig) {
         log('Bị kick khỏi server:', cleanReason);
         
         let isGhostSession = false;
-        
-        // Chuẩn hóa văn bản tiếng Việt sang chuẩn dựng sẵn (NFC) và viết thường để so khớp chính xác
-        const normalizedReason = cleanReason.toLowerCase().normalize('NFC');
-        
+        const normalizedReason = cleanReason.toLowerCase();
         if (
             normalizedReason.includes('đang chơi') || 
             normalizedReason.includes('đã kết nối tới proxy') || 
@@ -785,8 +878,6 @@ async function startBot(username, accountConfig) {
             `Lý do: \`${cleanReason}\``,
             16753920
         );
-
-        // Nhận diện bảo trì/khởi động lại máy chủ (bao gồm cả trường hợp bảo trì định kỳ lúc 4h30)
         const isMaintenance = normalizedReason.includes('bảo trì') || 
                               normalizedReason.includes('khởi động lại') || 
                               normalizedReason.includes('quay lại vào');
@@ -819,19 +910,25 @@ async function startBot(username, accountConfig) {
         if (hasEnded) return;
         const plainText = jsonMsg.toString();
 
-        const isPlayerMsg = /^(?:\[.*?\]\s*)*[a-zA-Z0-9_]{3,16}\s*:\s*.+/i.test(plainText);
-
         if (plainText.includes('ký với lệnh')) {
             bot.chat('/dk ' + pass);
+        }
+        if (plainText.includes("1.5K để mua vật phẩm này")) {
+            log(`khong mua duoc nua`);
+            bot.closeWindow(bot.currentWindow);
+        }
+        if (plainText.includes('không giới hạn shard nhận được tại afk')) {
+            gggg = true;
+        }
+        if (plainText.includes('Đã bật menu xác nhận tpa')) {
+            bot.chat('/tpatogglegui');
+            log(`⚡ Đã gửi lệnh /tpatogglegui để mở menu xác nhận TPA`);
         }
         if (plainText.includes('hãy đăng kí')) {
             bot.chat('/dk ' + pass);
         }
         if (plainText.includes('Đăng nhập thành công')) {
             isverified = true;
-        }
-        if (plainText.includes('Nếu phát hiện người chơi khác có')) {
-            selectServer();
         }
         if (plainText.includes('giây rồi mới mở menu')) {
             log("⚠️ Bị giới hạn thời gian mở rương. Đang chờ 5 giây để thử lại...");
@@ -842,9 +939,7 @@ async function startBot(username, accountConfig) {
                 selectServer();
             }, 5000);
         }
-        if (plainText.includes('afk')) {
-            log(`\x1b[36mĐã vào khu vực AFK Thành Công\x1b[0m`)
-        }
+       
         if (plainText.includes("có tài khoảng cùng ip của ban")) {
             logErr("Đã có tài khoản nào đó chạy cùng IP \x1b[33m(Vui lòng thêm hoặc đổi Proxy khác)\x1b[0m")
             sendDiscordWebhook(username, "Trùng IP", "Đã có tài khoản nào đó chạy cùng IP (Vui lòng thêm hoặc đổi Proxy khác)")
@@ -855,168 +950,11 @@ async function startBot(username, accountConfig) {
     });
 }
 
-async function handleCommand(input) {
-    const args = input.trim().split(" ").filter(Boolean);
-    if (args.length === 0) return null;
-
-    const command = args[0].toLowerCase();
-
-    if (command === 'exit') {
-        running = false;
-    } else if (command === 'home') {
-        CurrentTab = 'Home';
-    } else if (command === 'setting') {
-        CurrentTab = 'Setting';
-    } else if (command === 'help') {
-        CurrentTab = 'Help';
+startBot("ThinhNL", {
+    "pass": "kingmc123@",
+    "proxy": {
+        "enable": false,
+        "ip": "127.0.0.1",
+        "port": 9097
     }
-
-    else if (command === 'add') {
-        if (!args[1] || !args[2]) {
-            lastError = "Cú pháp không hợp lệ! Hãy dùng: Add <username> <pass>";
-        } else {
-            const username = args[1];
-            if (!config.Accounts[username]) {
-                config.Accounts[username] = { 
-                    pass: args[2], 
-                    proxy: { enable: false, ip: "", port: 0, user: "", pass: "" } 
-                };
-                saveConfig();
-            } else {
-                lastError = `Tài khoản '${username}' đã tồn tại trong danh sách!`;
-            }
-        }
-    }
-    else if (command === 'del') {
-        if (!args[1]) {
-            lastError = "Cú pháp không hợp lệ! Hãy dùng: Del <username/index>";
-        } else {
-            const username = resolveUsername(args[1]);
-            if (config.Accounts[username]) {
-                delete config.Accounts[username];
-                selectedAccounts = selectedAccounts.filter(acc => acc !== username);
-
-                config.CurrentAccounts = selectedAccounts;
-                saveConfig();
-            } else {
-                lastError = `Không tìm thấy tài khoản '${args[1]}' để xóa!`;
-            }
-        }
-    }
-    else if (command === 'acc') {
-        if (!args[1]) {
-            lastError = "Cú pháp không hợp lệ! Hãy dùng: Acc <username/index>";
-        } else {
-            const username = resolveUsername(args[1]);
-            if (config.Accounts[username]) {
-                if (selectedAccounts.includes(username)) {
-                    selectedAccounts = selectedAccounts.filter(acc => acc !== username);
-                } else {
-                    selectedAccounts.push(username);
-                }
-
-                config.CurrentAccounts = selectedAccounts;
-                saveConfig();
-            } else {
-                lastError = `Không tìm thấy tài khoản '${args[1]}' trong danh sách!`;
-            }
-        }
-    }
-    else if (command === 'webhook') {
-        if (!args[1]) {
-            lastError = "Cú pháp không hợp lệ! Hãy dùng: Webhook <url webhook>";
-        } else {
-            config.App.Webhook = args[1];
-            saveConfig();
-        }
-    }
-    else if (command === 'proxy') {
-        if (!args[1] || !args[2]) {
-            lastError = "Cú pháp không hợp lệ! Hãy dùng: Proxy <username/index> <ON/OFF/IP:PORT/IP PORT/IP:PORT:USER:PASS/IP PORT USER PASS>";
-        } else {
-            const username = resolveUsername(args[1]);
-            if (!config.Accounts[username]) {
-                lastError = `Không tìm thấy tài khoản '${args[1]}' để cài đặt Proxy!`;
-            } else {
-                const action = args[2].toUpperCase();
-                if (action === 'ON') {
-                    config.Accounts[username].proxy.enable = true;
-                    saveConfig();
-                } else if (action === 'OFF') {
-                    config.Accounts[username].proxy.enable = false;
-                    saveConfig();
-                } else {
-                    let ip = "";
-                    let port = 0;
-                    let user = "";
-                    let pass = "";
-
-                    let rawProxy = args[2].replace(/^(https?:\/\/)/i, '');
-
-                    if (rawProxy.includes(':')) {
-                        const parts = rawProxy.split(':');
-                        ip = parts[0];
-                        if (parts[1]) port = parseInt(parts[1], 10);
-                        if (parts[2]) user = parts[2];
-                        if (parts[3]) pass = parts[3];
-                    } 
-                    else {
-                        ip = rawProxy;
-                        if (args[3]) port = parseInt(args[3], 10);
-                        if (args[4]) user = args[4];
-                        if (args[5]) pass = args[5];
-                    }
-
-                    if (ip && !isNaN(port) && port > 0) {
-                        config.Accounts[username].proxy = {
-                            enable: true,
-                            ip: ip,
-                            port: port,
-                            user: user || "",
-                            pass: pass || ""
-                        };
-                        saveConfig();
-                    } else {
-                        lastError = "Cú pháp cấu hình Proxy không hợp lệ! Ví dụ: Proxy 1 103.28.36.15:8080:admin:123456";
-                    }
-                }
-            }
-        }
-    }
-    else if (command === 'run') {
-        if (selectedAccounts.length === 0) {
-            lastError = "Chưa chọn tài khoản nào để chạy! Hãy dùng lệnh 'Acc' trước.";
-        } else {
-            console.clear();
-            console.log("\x1b[33m====================================================\x1b[0m");
-            console.log("\x1b[33m  HỆ THỐNG ĐANG KHỞI CHẠY BOT - ĐÃ TẮT MENU TƯƠNG TÁC \x1b[0m");
-            console.log("\x1b[33m  BẤM CTRL + C ĐỂ DỪNG TOÀN BỘ CHƯƠNG TRÌNH         \x1b[0m");
-            console.log("\x1b[33m====================================================\x1b[0m\n");
-
-            selectedAccounts.forEach(acc => {
-                const accConfig = config.Accounts[acc];
-                console.log(`-> Starting: ${acc} | Proxy: ${accConfig.proxy.enable ? accConfig.proxy.ip : "Không dùng"}`);
-                startBot(acc, accConfig);
-            });
-
-            return "START_BOTS";
-        }
-    }
-    else {
-        lastError = `Lệnh '${command}' không tồn tại! Nhập 'Help' để xem danh sách các lệnh.`;
-    }
-    return null;
-}
-
-async function main() {
-    startBot("ThinhNL", {
-        "pass": "kingmc123@",
-        "proxy": {
-            "enable": false,
-            "ip": "127.0.0.1",
-            "port": 9097
-        }
-    })
-}
-
-main();
+});
